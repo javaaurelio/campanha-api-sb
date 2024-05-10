@@ -10,20 +10,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 import med.voll.api.domain.pesquisa.Pesquisa;
 import med.voll.api.domain.pesquisado.Pesquisado;
 import med.voll.api.domain.voto.metadado.MetadadosVoto;
 
 @Table(name = "voto")
 @Entity(name = "voto")
-@Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@EqualsAndHashCode(of = "id")
 public class Voto {
     
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)

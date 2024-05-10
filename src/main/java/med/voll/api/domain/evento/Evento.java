@@ -1,5 +1,7 @@
 package med.voll.api.domain.evento;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -7,23 +9,13 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 import med.voll.api.domain.pesquisa.Pesquisa;
-import med.voll.api.domain.voto.metadado.MetadadosVoto;
 
 @Table(name = "evento")
 @Entity(name = "evento")
-@Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@EqualsAndHashCode(of = "id")
 public class Evento {
 	
 	@Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,9 +28,15 @@ public class Evento {
     @NotNull
     private String imagemUrl;
 	@NotNull
-    private String dataInicio;
+    private LocalDate dataInicio;
+	
+	private boolean publicado=false;
+	private LocalDate dataHorasPublicacao;
+	private LocalDate dataHorasPublicacaoSuspensao;
+	private String hash;
+	
 	@NotNull
-    private String dataFim;
+    private LocalDate dataFim;
 	
     @OneToMany(mappedBy = "evento")
 	private List<Pesquisa> listaPesquisa = new ArrayList<Pesquisa>();
@@ -49,8 +47,8 @@ public class Evento {
 		this.nome = cadastroEvento.campanha();
 		this.descricao = cadastroEvento.descricao();
 		this.imagemUrl = cadastroEvento.imagemUrl();
-		this.dataInicio = cadastroEvento.dataInicio();
-		this.dataFim = cadastroEvento.dataFim();
+		this.dataInicio = LocalDate.parse(cadastroEvento.dataInicio(), DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+		this.dataFim = LocalDate.parse(cadastroEvento.dataFim(), DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 	}
     
     public Evento() {
@@ -82,19 +80,19 @@ public class Evento {
 		this.imagemUrl = imagemUrl;
 	}
 
-	public String getDataInicio() {
+	public LocalDate getDataInicio() {
 		return dataInicio;
 	}
 
-	public void setDataInicio(String dataInicio) {
+	public void setDataInicio(LocalDate dataInicio) {
 		this.dataInicio = dataInicio;
 	}
 
-	public String getDataFim() {
+	public LocalDate getDataFim() {
 		return dataFim;
 	}
 
-	public void setDataFim(String dataFim) {
+	public void setDataFim(LocalDate dataFim) {
 		this.dataFim = dataFim;
 	}
 
@@ -104,5 +102,37 @@ public class Evento {
 
 	public void setListaPesquisa(List<Pesquisa> listaPesquisa) {
 		this.listaPesquisa = listaPesquisa;
+	}
+
+	public boolean isPublicado() {
+		return publicado;
+	}
+
+	public void setPublicado(boolean publicado) {
+		this.publicado = publicado;
+	}
+
+	public String getHash() {
+		return hash;
+	}
+
+	public void setHash(String hash) {
+		this.hash = hash;
+	}
+
+	public LocalDate getDataHorasPublicacao() {
+		return dataHorasPublicacao;
+	}
+
+	public void setDataHorasPublicacao(LocalDate dataHorasPublicacao) {
+		this.dataHorasPublicacao = dataHorasPublicacao;
+	}
+
+	public LocalDate getDataHorasPublicacaoSuspensao() {
+		return dataHorasPublicacaoSuspensao;
+	}
+
+	public void setDataHorasPublicacaoSuspensao(LocalDate dataHorasPublicacaoSuspensao) {
+		this.dataHorasPublicacaoSuspensao = dataHorasPublicacaoSuspensao;
 	}
 }

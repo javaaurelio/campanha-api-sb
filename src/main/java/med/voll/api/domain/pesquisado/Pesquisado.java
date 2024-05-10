@@ -5,18 +5,10 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 import med.voll.api.domain.voto.DadosCadastroVotoInformacaoPessoa;
 
 @Table(name = "pesquisado")
 @Entity(name = "pesquisado")
-@Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@EqualsAndHashCode(of = "id")
 public class Pesquisado {
 
     public Pesquisado(Long id, String nome, Integer idade, String uF, String cidade, String telefone, String sexo) {

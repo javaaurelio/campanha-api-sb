@@ -3,7 +3,6 @@ package med.voll.api.domain.voto.metadado;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -12,20 +11,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 import med.voll.api.domain.evento.Evento;
 import med.voll.api.domain.voto.DadosCadastroVotoCoordenadas;
 import med.voll.api.domain.voto.Voto;
 
 @Table(name = "metadadosvoto")
 @Entity(name = "metadadosvoto")
-@Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@EqualsAndHashCode(of = "id")
 public class MetadadosVoto {
 
 	public MetadadosVoto(String headerHttp, String latitude, String longitude, LocalDateTime datacriacao) {

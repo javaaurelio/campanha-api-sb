@@ -1,6 +1,5 @@
 package med.voll.api.controller;
 
-import java.util.Iterator;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,25 +44,9 @@ public class VotacaoController {
     	return votoRepository.findAllByPesquisaEventoId(idEvento).stream().map(DadosListagemVoto::new).toList();
     }
     
-    @GetMapping("/painelvotacao/evento/{idEvento}")
-    public List<DadosListagemPesquisa> obterDadosPainelVotacao(@PathVariable Long idEvento, HttpServletRequest request) {
+    @GetMapping("/painelvotacao/evento/{hash}")
+    public List<DadosListagemPesquisa> obterDadosPainelVotacao(@PathVariable String hash, HttpServletRequest request) {
     	
-    	return votoService.obterDadosPainelVotacao(idEvento);
+    	return votoService.obterDadosPainelVotacao(hash);
     }
-    
-//    @PutMapping
-//    @Transactional
-//    public void atualizar(@RequestBody @Valid DadosAtualizacaoPaciente dados) {
-//        var paciente = repository.getReferenceById(dados.id());
-//        paciente.atualizarInformacoes(dados);
-//    }
-//
-//    @DeleteMapping("/{id}")
-//    @Transactional
-//    public void excluir(@PathVariable Long id) {
-//        var paciente = repository.getReferenceById(id);
-//        paciente.excluir();
-//    }
-
-
 }

@@ -11,7 +11,9 @@ import java.util.Map;
 
 import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import med.voll.api.domain.dashboardevento.DadosDashboardEventoGrafico;
 import med.voll.api.domain.dashboardevento.DadosDashboardEventoGraficoQtdVotos;
@@ -245,16 +247,22 @@ public class VotoService {
 		votoRepository.saveAll(listaVotos);
 	}
 
-	public List<DadosListagemPesquisa> obterDadosPainelVotacao(Long idEvento) {
+	public List<DadosListagemPesquisa> obterDadosPainelVotacao(String hash) {
+		
+		Evento eventoByHash = eventoRepository.findByHash(hash);
+		
+		if (!eventoByHash.isPublicado()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Evento nao aberto para voto!");
+		} 
+		
 		
 		MetadadosVoto metadadosVoto = new MetadadosVoto();
 		metadadosVoto.setDataCriacao(LocalDateTime.now());
-		metadadosVoto.setEvento(new Evento());
-		metadadosVoto.getEvento().setId(idEvento);
+		metadadosVoto.setEvento(eventoByHash);
 		metadadosVotoRepository.save(metadadosVoto);
 		
 		List<DadosListagemPesquisa> listaDadosPainelVotacao = new ArrayList<DadosListagemPesquisa>();
-		List<Pesquisa> allByEventoIdOrderByOrdemAsc = pesquisaRepository.findAllByEventoIdOrderByOrdemAsc(idEvento);
+		List<Pesquisa> allByEventoIdOrderByOrdemAsc = pesquisaRepository.findAllByEventoIdOrderByOrdemAsc(eventoByHash.getId());
 		for (Pesquisa pesquisa : allByEventoIdOrderByOrdemAsc) {
 			listaDadosPainelVotacao.add(new DadosListagemPesquisa(pesquisa, metadadosVoto.getId()));
 		}

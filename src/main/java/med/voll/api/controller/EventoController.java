@@ -1,5 +1,9 @@
 package med.voll.api.controller;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -39,11 +43,39 @@ public class EventoController {
     	
     	Evento referenceById = repositoryEvento.getReferenceById(id);
     	referenceById.setNome(evento.campanha());
-    	referenceById.setDataInicio(evento.dataInicio());
-    	referenceById.setDataFim(evento.dataFim());
+    	
+    	referenceById.setDataInicio(    			
+    			LocalDate.parse(evento.dataInicio(), 
+    					DateTimeFormatter.ofPattern("yyyy-MM-dd")) );
+    	
+    	referenceById.setDataFim( LocalDate.parse(evento.dataFim(), DateTimeFormatter.ofPattern("yyyy-MM-dd")) );
     	referenceById.setImagemUrl(evento.imagemUrl());
     	
     	repositoryEvento.save(referenceById);
+    }
+    
+    @PutMapping("/publicar/{id}/{status}")
+    @Transactional
+    public String publicarCampanha(@PathVariable Long id, @PathVariable String status) {
+    	
+    	Evento referenceById = repositoryEvento.getReferenceById(id);
+    	
+    	boolean publicar = status.contains("1") || status.toLowerCase().contains("true") || status.toLowerCase().contains("sim");
+   		referenceById.setPublicado(publicar);
+   		
+   		if (publicar) {
+   			referenceById.setDataHorasPublicacao(LocalDate.now());
+   			referenceById.setDataHorasPublicacaoSuspensao(null);
+   		} else {
+   			referenceById.setDataHorasPublicacaoSuspensao(LocalDate.now());
+   		}
+   		
+   		if (referenceById.getHash()==null || referenceById.getHash().isEmpty()) {
+   			referenceById.setHash(UUID.randomUUID().toString());
+   		}
+    	repositoryEvento.save(referenceById);
+    	
+    	return referenceById.getHash();
     }
     
     @DeleteMapping("/{id}")

@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +20,6 @@ import med.voll.api.domain.dashboardevento.DadosDashboardEventoPainelAtividadesO
 import med.voll.api.domain.dashboardevento.DadosDashboardEventoPainelQtdVotos;
 import med.voll.api.domain.evento.Evento;
 import med.voll.api.domain.evento.EventoRepository;
-import med.voll.api.domain.pesquisa.Pesquisa;
 import med.voll.api.domain.pesquisado.Pesquisado;
 import med.voll.api.domain.voto.Voto;
 import med.voll.api.domain.voto.VotoRepository;
