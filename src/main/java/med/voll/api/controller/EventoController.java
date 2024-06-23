@@ -23,25 +23,29 @@ import med.voll.api.domain.evento.DadosCadastroEvento;
 import med.voll.api.domain.evento.DadosListagemEvento;
 import med.voll.api.domain.evento.Evento;
 import med.voll.api.domain.evento.EventoRepository;
+import med.voll.api.service.evento.EventoService;
 
 @RestController
 @RequestMapping("evento")
 public class EventoController {
 
+	@Autowired
+	private EventoRepository eventoRepository;
+	
     @Autowired
-    private EventoRepository repositoryEvento;
+    private EventoService eventoService;
 
     @PostMapping
     @Transactional
     public void cadastrar(@RequestBody @Valid DadosCadastroEvento evento) {
-    	repositoryEvento.save(new Evento(evento));
+    	eventoRepository.save(new Evento(evento));
     }
     
     @PutMapping("/{id}")
     @Transactional
     public void atualizar(@RequestBody @Valid DadosCadastroEvento evento, @PathVariable Long id) {
     	
-    	Evento referenceById = repositoryEvento.getReferenceById(id);
+    	Evento referenceById = eventoRepository.getReferenceById(id);
     	referenceById.setNome(evento.campanha());
     	
     	referenceById.setDataInicio(    			
@@ -50,30 +54,34 @@ public class EventoController {
     	
     	referenceById.setDataFim( LocalDate.parse(evento.dataFim(), DateTimeFormatter.ofPattern("yyyy-MM-dd")) );
     	referenceById.setImagemUrl(evento.imagemUrl());
+    	referenceById.setLayoutPainelVotacao(evento.layoutPainelVotacao());
+    	referenceById.setDescricao(evento.descricao());
     	
-    	repositoryEvento.save(referenceById);
+    	eventoRepository.save(referenceById);
     }
     
     @PutMapping("/publicar/{id}/{status}")
     @Transactional
-    public String publicarCampanha(@PathVariable Long id, @PathVariable String status) {
+    public String publicarCampanha(@PathVariable Long id, @PathVariable String status, @RequestBody String url) {
     	
-    	Evento referenceById = repositoryEvento.getReferenceById(id);
+    	Evento referenceById = eventoRepository.getReferenceById(id);
     	
     	boolean publicar = status.contains("1") || status.toLowerCase().contains("true") || status.toLowerCase().contains("sim");
    		referenceById.setPublicado(publicar);
    		
+   		if (referenceById.getHash()==null || referenceById.getHash().isEmpty()) {
+   			referenceById.setHash(UUID.randomUUID().toString());
+   		}
+   		
    		if (publicar) {
+   			referenceById.setUrlPublicacao(url+referenceById.getHash());
    			referenceById.setDataHorasPublicacao(LocalDate.now());
    			referenceById.setDataHorasPublicacaoSuspensao(null);
    		} else {
    			referenceById.setDataHorasPublicacaoSuspensao(LocalDate.now());
    		}
    		
-   		if (referenceById.getHash()==null || referenceById.getHash().isEmpty()) {
-   			referenceById.setHash(UUID.randomUUID().toString());
-   		}
-    	repositoryEvento.save(referenceById);
+   		eventoRepository.save(referenceById);
     	
     	return referenceById.getHash();
     }
@@ -82,12 +90,12 @@ public class EventoController {
     @Transactional
     public void delete(@PathVariable Long id) {
     	
-    	repositoryEvento.deleteById(id);
+    	eventoRepository.deleteById(id);
     }
 
     @GetMapping
     public Page<DadosListagemEvento> listar(@PageableDefault(size = 10, sort = {"nome"}) Pageable paginacao) {
-        return repositoryEvento.findAll(paginacao).map(DadosListagemEvento::new);
+        return eventoService.recuperarListaEventos(paginacao);
     }
     
 //

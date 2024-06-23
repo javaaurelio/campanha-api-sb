@@ -5,8 +5,6 @@ import org.hibernate.validator.constraints.URL;
 import jakarta.validation.constraints.NotBlank;
 
 public record DadosCadastroEvento(
-
-		
 		Long id,
 		
 		@NotBlank
@@ -22,11 +20,10 @@ public record DadosCadastroEvento(
 
         @NotBlank
         @URL
-        String imagemUrl
+        String imagemUrl,
         
-//        @NotBlank
-//        @Pattern(regexp = "\\d{3}\\.\\d{3}\\.\\d{3}\\-\\d{2}")
-//        String cpf,
-
+        @NotBlank
+        String layoutPainelVotacao
+        
         ) {
 }

@@ -1,4 +1,4 @@
-package med.voll.api.service.voto;
+package med.voll.api.service.usuario;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -6,14 +6,13 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import med.voll.api.domain.dashboardevento.DadosDashboardEventoGrafico;
 import med.voll.api.domain.dashboardevento.DadosDashboardEventoGraficoQtdVotos;
@@ -22,19 +21,16 @@ import med.voll.api.domain.dashboardevento.DadosDashboardEventoPainelAtividadesO
 import med.voll.api.domain.dashboardevento.DadosDashboardEventoPainelQtdVotos;
 import med.voll.api.domain.evento.Evento;
 import med.voll.api.domain.evento.EventoRepository;
-import med.voll.api.domain.pesquisa.DadosListagemPesquisa;
-import med.voll.api.domain.pesquisa.Pesquisa;
-import med.voll.api.domain.pesquisa.PesquisaRepository;
 import med.voll.api.domain.pesquisado.Pesquisado;
-import med.voll.api.domain.voto.DadosCadastroDadosVoto;
-import med.voll.api.domain.voto.DadosCadastroVotos;
+import med.voll.api.domain.voto.DadosGraficoPiaEstado;
+import med.voll.api.domain.voto.DadosGraficoRadar;
 import med.voll.api.domain.voto.Voto;
 import med.voll.api.domain.voto.VotoRepository;
 import med.voll.api.domain.voto.metadado.MetadadosVoto;
 import med.voll.api.domain.voto.metadado.MetadadosVotoRepository;
 
 @Service
-public class VotoService {
+public class UsuarioService {
 
 	@Autowired
 	private VotoRepository votoRepository;
@@ -44,26 +40,22 @@ public class VotoService {
 	
 	@Autowired
 	private EventoRepository eventoRepository;
-	
-	@Autowired
-	private PesquisaRepository pesquisaRepository;
 
 	public List<DadosDashboardEventoPainelAtividadesOnlineVoto> obterAtividadesOnline(Long idEvento) {
 		
 		LocalDateTime data = LocalDateTime.now();
-		LocalDateTime dataInicio = data.with(LocalTime.MIN);
-		LocalDateTime dataFim = data.with(LocalTime.MAX);
+		LocalDateTime dataFimDia = data.with(LocalTime.MAX);
 		
 		List<Voto> allByPesquisaEventoIdAndDataVoto = 
-				votoRepository.findAllByPesquisaEventoIdAndDataVotoBetweenOrderByDataVotoDesc(idEvento, dataInicio, dataFim);
+				votoRepository.findAllByPesquisaEventoIdAndDataVotoBeforeOrderByDataVotoDesc(idEvento, dataFimDia);
 		
 		List<DadosDashboardEventoPainelAtividadesOnlineVoto> listaAtividade =  new ArrayList<DadosDashboardEventoPainelAtividadesOnlineVoto>();
-
+		
 		for (Voto itemVoto : allByPesquisaEventoIdAndDataVoto) {
+			itemVoto.getMetadadosVoto().getListaVotos().size();
 			LocalDateTime dataAtual = LocalDateTime.now();
 			LocalDateTime dataVoto = itemVoto.getDataVoto();
 			Duration duracao = Duration.between(dataVoto, dataAtual);
-			
 			StringBuffer formatDuration = new StringBuffer();
 			StringBuffer formatDurationEspecifico = new StringBuffer();
 			
@@ -88,13 +80,13 @@ public class VotoService {
 				itemVoto.setPesquisado(new Pesquisado());
 			}
 			
-			
 			listaAtividade.add(
 					new DadosDashboardEventoPainelAtividadesOnlineVoto(itemVoto.getId(), itemVoto.getVoto(), 
 							itemVoto.getPesquisa().getPesquisa(), itemVoto.getPesquisado().getNome(), 
-							itemVoto.getPesquisado().getCidade(), "", 
+							itemVoto.getPesquisado().getCidade(), itemVoto.getPesquisado().getSexo(), 
 							formatDuration.toString(), 
-							formatDurationEspecifico.toString(), 0, itemVoto.getMetadadosVoto().getLatitude(), 
+							formatDurationEspecifico.toString(), 0, 
+							itemVoto.getMetadadosVoto().getLatitude(), 
 							itemVoto.getMetadadosVoto().getLongitude()));
 		}
 		// TEM QUE FAZER QUERY NATIVA
@@ -104,7 +96,6 @@ public class VotoService {
 	
 	public DadosDashboardEventoGrafico obterDadosGrafico(Long idEvento) {
 		
-		Evento evento = eventoRepository.getReferenceById(idEvento);
 		LocalDateTime now = LocalDateTime.now();
 		LocalDateTime dataInicio = now.plusDays(-7l);
 		dataInicio = dataInicio.with(LocalTime.MIN);
@@ -122,7 +113,6 @@ public class VotoService {
 		    String data = date.format(DateTimeFormatter.ISO_DATE);
 		    if (!categoriesListaDatas.contains(data)) {
 		    	categoriesListaDatas.add(data);
-		    	
 		    }
 		    
 		    Map<String, Long> votosDoQualificados = seriesQualificadoComQtdVotos.get(""+voto.getVoto());
@@ -147,6 +137,8 @@ public class VotoService {
 		mapQualificador.put("4", "Bom");
 		mapQualificador.put("5", "Otimo");
 		
+		List<String> qualificadorContabilizado = new ArrayList<String>();
+		
 		List<DadosDashboardEventoGraficoVotoPorData> lista =  new ArrayList<DadosDashboardEventoGraficoVotoPorData>();
 		for (String idQualificador : seriesQualificadoComQtdVotos.keySet()) {
 
@@ -158,12 +150,15 @@ public class VotoService {
 				Long qtd = map.get(itemData);
 				listaVotos.add(new DadosDashboardEventoGraficoQtdVotos(itemData , qtd));
 			}
-			
-				
+			qualificadorContabilizado.add(idQualificador);
 			lista.add(new DadosDashboardEventoGraficoVotoPorData(mapQualificador.get(idQualificador), listaVotos));
-			
 		}
 		
+		for (String itemQualificador : mapQualificador.keySet()) {
+			if (!qualificadorContabilizado.contains(itemQualificador)) {
+				lista.add(new DadosDashboardEventoGraficoVotoPorData(mapQualificador.get(itemQualificador), new ArrayList<DadosDashboardEventoGraficoQtdVotos>()));
+			}
+		}
 		
 		DadosDashboardEventoGrafico dadosDashboardEventoGrafico 
 			= new DadosDashboardEventoGrafico(categoriesListaDatas, lista);
@@ -226,51 +221,91 @@ public class VotoService {
 		// TEM QUE FAZER QUERY NATIVA
 		return dadosDashboardEventoPainelQtdVotos;
 	}
+	
+	public double calculatePercentage(double obtained, double total) {
+        return obtained * 100 / total;
+    }
 
-	public void registrarVoto(DadosCadastroDadosVoto dadosVoto, String headerNames) {
+	
+	
+	public List<DadosDashboardEventoPainelAtividadesOnlineVoto> obterAtividadesOnlineMedia(Long idEvento) {
+		LocalDateTime data = LocalDateTime.now();
+		LocalDateTime dataInicio = data.with(LocalTime.MIN);
+		LocalDateTime dataFim = data.with(LocalTime.MAX);
 		
-		List<Voto> listaVotos = new ArrayList<Voto>();
-		Pesquisado pesquisado = new Pesquisado();
+		List<MetadadosVoto> allByPesquisaEventoIdAndDataVoto = 
+				metadadosVotoRepository.findAllByEventoIdAndDataRegistroVotoBetweenOrderByDataRegistroVotoDesc(idEvento, dataInicio, dataFim);
+		
+		List<DadosDashboardEventoPainelAtividadesOnlineVoto> listaAtividade =  new ArrayList<DadosDashboardEventoPainelAtividadesOnlineVoto>();
 
-		pesquisado = new Pesquisado(dadosVoto.pessoa());
-		
-		MetadadosVoto referenceById = metadadosVotoRepository.getReferenceById(dadosVoto.idMetadadoVoto());
-		referenceById.setDataRegistroVoto(LocalDateTime.now());
-		referenceById.setLatitude(dadosVoto.coordenadas().latitude());
-		referenceById.setLongitude(dadosVoto.coordenadas().longitude());
-		referenceById.setDataAberturaTela(dadosVoto.dataTela());
-		referenceById.setHeaderHttp(headerNames);
-		
-		for (DadosCadastroVotos itemTela : dadosVoto.listaVoto()) {
+		for (MetadadosVoto itemMetadadosVoto : allByPesquisaEventoIdAndDataVoto) {
+			int totalVotos = 0;
+			int qtdPerguntas = 0;
+					
+			LocalDateTime dataAtual = LocalDateTime.now();
+			LocalDateTime dataVoto = itemMetadadosVoto.getDataRegistroVoto();
+			Duration duracao = Duration.between(dataVoto, dataAtual);
 			
-			Voto e = new Voto(itemTela);
-			e.setMetadadosVoto(referenceById);
-			e.setPesquisado(pesquisado);
-			listaVotos.add(e);
+			StringBuffer formatDuration = new StringBuffer();
+			StringBuffer formatDurationEspecifico = new StringBuffer();
+			
+			formatDurationEspecifico.append(
+					DurationFormatUtils.formatDuration(duracao.toMillis(), "H 'horas' m 'minutos' s 'segundos' S 'millisegundos'"));
+			
+			if (duracao.toHours()>0) {
+				formatDuration.append(DurationFormatUtils.formatDuration(duracao.toMillis(), " H 'horas'"));
+			} else
+			if (duracao.toMinutes()>0) {
+				formatDuration.append(DurationFormatUtils.formatDuration(duracao.toMillis(), " m 'minutos'"));
+			} else
+			if (duracao.toSeconds()>0) {
+				formatDuration.append(DurationFormatUtils.formatDuration(duracao.toMillis(), " s 'segundos'"));
+			} else
+			if (duracao.toMillis()>0) {
+				formatDuration.append(DurationFormatUtils.formatDuration(duracao.toMillis(), " S 'millisegundos'"));
+			}
+			
+			Pesquisado pessoa = new Pesquisado();
+			if (!itemMetadadosVoto.getListaVotos().isEmpty()) {
+				pessoa = itemMetadadosVoto.getListaVotos().get(0).getPesquisado();
+				if (pessoa == null) {
+					pessoa = new Pesquisado();
+				}
+			}
+			
+			totalVotos = 0;
+			qtdPerguntas =  itemMetadadosVoto.getListaVotos().size();
+			for (Voto itemVoto : itemMetadadosVoto.getListaVotos()) {
+				totalVotos += itemVoto.getVoto();			
+			} 
+
+			int MaximoVoto = 5;
+			int mediaVotos =  totalVotos * MaximoVoto / (qtdPerguntas*MaximoVoto);
+			
+			listaAtividade.add(
+					new DadosDashboardEventoPainelAtividadesOnlineVoto(null, null, 
+							"", pessoa.getNome(), 
+							pessoa.getCidade(), pessoa.getSexo(), formatDuration.toString(), 
+							formatDurationEspecifico.toString(), mediaVotos, 
+							itemMetadadosVoto.getLatitude(), itemMetadadosVoto.getLongitude()));
 		}
-		votoRepository.saveAll(listaVotos);
+		
+		// TEM QUE FAZER QUERY NATIVA
+		return listaAtividade.subList(0, (listaAtividade.size()>10?10:listaAtividade.size()));
 	}
 
-	public List<DadosListagemPesquisa> obterDadosPainelVotacao(String hash) {
+	public List<DadosGraficoRadar> obterDadosGraficoRadar(Long idEvento) {
+
+		List<DadosGraficoRadar> dadosGraficoRadar = votoRepository.findDadosGraficoRadar(idEvento);
 		
-		Evento eventoByHash = eventoRepository.findByHash(hash);
+		return dadosGraficoRadar;
+	}
+
+	public List<DadosGraficoPiaEstado> obterDadosGraficoPie(Long idEvento) {
+		// TODO Auto-generated method stub
 		
-		if (!eventoByHash.isPublicado()) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Evento nao aberto para voto!");
-		} 
-		
-		
-		MetadadosVoto metadadosVoto = new MetadadosVoto();
-		metadadosVoto.setDataCriacao(LocalDateTime.now());
-		metadadosVoto.setEvento(eventoByHash);
-		metadadosVotoRepository.save(metadadosVoto);
-		
-		List<DadosListagemPesquisa> listaDadosPainelVotacao = new ArrayList<DadosListagemPesquisa>();
-		List<Pesquisa> allByEventoIdOrderByOrdemAsc = pesquisaRepository.findAllByEventoIdOrderByOrdemAsc(eventoByHash.getId());
-		for (Pesquisa pesquisa : allByEventoIdOrderByOrdemAsc) {
-			listaDadosPainelVotacao.add(new DadosListagemPesquisa(pesquisa, metadadosVoto.getId()));
-		}
-		return listaDadosPainelVotacao;
+		List<DadosGraficoPiaEstado> dadosGraficoPiaEstados = votoRepository.findDadosGraficoPorEstado(idEvento);
+		return dadosGraficoPiaEstados;
 	}
 
 }

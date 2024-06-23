@@ -70,5 +70,4 @@ public class Pesquisa {
 	public void setEvento(Evento evento) {
 		this.evento = evento;
 	}
-
 }

@@ -22,8 +22,6 @@ public class Voto {
     private Long id;
     private int voto;    
     private LocalDateTime dataVoto;
-    private long latitude; 
-    private long longitude;
     
 	@ManyToOne()
     private Pesquisa pesquisa;  
@@ -84,22 +82,6 @@ public class Voto {
 
 	public void setPesquisado(Pesquisado pesquisado) {
 		this.pesquisado = pesquisado;
-	}
-
-	public long getLatitude() {
-		return latitude;
-	}
-
-	public void setLatitude(long latitude) {
-		this.latitude = latitude;
-	}
-
-	public long getLongitude() {
-		return longitude;
-	}
-
-	public void setLongitude(long longitude) {
-		this.longitude = longitude;
 	}
 
 	public MetadadosVoto getMetadadosVoto() {

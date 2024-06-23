@@ -1,11 +1,14 @@
 package med.voll.api.service.dashboardevento;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -13,6 +16,8 @@ import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import med.voll.api.domain.dashboardevento.DadosDashboardEventoGeralGrafico;
+import med.voll.api.domain.dashboardevento.DadosDashboardEventoGeralGraficoItem;
 import med.voll.api.domain.dashboardevento.DadosDashboardEventoGrafico;
 import med.voll.api.domain.dashboardevento.DadosDashboardEventoGraficoQtdVotos;
 import med.voll.api.domain.dashboardevento.DadosDashboardEventoGraficoVotoPorData;
@@ -21,8 +26,11 @@ import med.voll.api.domain.dashboardevento.DadosDashboardEventoPainelQtdVotos;
 import med.voll.api.domain.evento.Evento;
 import med.voll.api.domain.evento.EventoRepository;
 import med.voll.api.domain.pesquisado.Pesquisado;
+import med.voll.api.domain.voto.DadosGraficoPiaEstado;
+import med.voll.api.domain.voto.DadosGraficoRadar;
 import med.voll.api.domain.voto.Voto;
 import med.voll.api.domain.voto.VotoRepository;
+import med.voll.api.domain.voto.metadado.DadosMetadadosVotoGraficoBarra;
 import med.voll.api.domain.voto.metadado.MetadadosVoto;
 import med.voll.api.domain.voto.metadado.MetadadosVotoRepository;
 
@@ -41,11 +49,10 @@ public class DashboardEventoService {
 	public List<DadosDashboardEventoPainelAtividadesOnlineVoto> obterAtividadesOnline(Long idEvento) {
 		
 		LocalDateTime data = LocalDateTime.now();
-		LocalDateTime dataInicio = data.with(LocalTime.MIN);
-		LocalDateTime dataFim = data.with(LocalTime.MAX);
+		LocalDateTime dataFimDia = data.with(LocalTime.MAX);
 		
 		List<Voto> allByPesquisaEventoIdAndDataVoto = 
-				votoRepository.findAllByPesquisaEventoIdAndDataVotoBetweenOrderByDataVotoDesc(idEvento, dataInicio, dataFim);
+				votoRepository.findAllByPesquisaEventoIdAndDataVotoBeforeOrderByDataVotoDesc(idEvento, dataFimDia);
 		
 		List<DadosDashboardEventoPainelAtividadesOnlineVoto> listaAtividade =  new ArrayList<DadosDashboardEventoPainelAtividadesOnlineVoto>();
 		
@@ -58,8 +65,11 @@ public class DashboardEventoService {
 			StringBuffer formatDurationEspecifico = new StringBuffer();
 			
 			formatDurationEspecifico.append(
-					DurationFormatUtils.formatDuration(duracao.toMillis(), "H 'horas' m 'minutos' s 'segundos' S 'millisegundos'"));
+					DurationFormatUtils.formatDuration(duracao.toMillis(), "d 'dias' H 'horas' m 'minutos' s 'segundos' S 'millisegundos'"));
 			
+			if (duracao.toHours()>24) {
+				formatDuration.append(DurationFormatUtils.formatDuration(duracao.toMillis(), " d 'dias'"));
+			} else
 			if (duracao.toHours()>0) {
 				formatDuration.append(DurationFormatUtils.formatDuration(duracao.toMillis(), " H 'horas'"));
 			} else
@@ -80,21 +90,60 @@ public class DashboardEventoService {
 			
 			listaAtividade.add(
 					new DadosDashboardEventoPainelAtividadesOnlineVoto(itemVoto.getId(), itemVoto.getVoto(), 
-							itemVoto.getPesquisa().getPesquisa(), itemVoto.getPesquisado().getNome(), itemVoto.getPesquisado().getCidade(), itemVoto.getPesquisado().getSexo(), formatDuration.toString(), 
-							formatDurationEspecifico.toString(), 0));
+							itemVoto.getPesquisa().getPesquisa(), itemVoto.getPesquisado().getNome(), 
+							itemVoto.getPesquisado().getCidade(), itemVoto.getPesquisado().getSexo(), 
+							formatDuration.toString(), 
+							formatDurationEspecifico.toString(), 0, 
+							itemVoto.getMetadadosVoto().getLatitude(), 
+							itemVoto.getMetadadosVoto().getLongitude()));
 		}
 		// TEM QUE FAZER QUERY NATIVA
 		
 		return listaAtividade.subList(0, (listaAtividade.size()>10?10:listaAtividade.size()));
 	}
 	
+	public List<DadosMetadadosVotoGraficoBarra> obterDadosGraficoBarraDia(Long idEvento) {
+		
+		List<DadosMetadadosVotoGraficoBarra> dadosMetadadosVotoGraficoBarraPorMes 
+			= metadadosVotoRepository.findDadosMetadadosVotoGraficoBarraPorDia(idEvento);
+		return dadosMetadadosVotoGraficoBarraPorMes;
+	}
+	
+	public List<DadosMetadadosVotoGraficoBarra> obterDadosGraficoBarraMes(Long idEvento) {
+		
+		List<DadosMetadadosVotoGraficoBarra> dadosMetadadosVotoGraficoBarraPorMes 
+		= metadadosVotoRepository.findDadosMetadadosVotoGraficoBarraPorMes(idEvento);
+		return dadosMetadadosVotoGraficoBarraPorMes;
+	}
+	
+	public List<DadosMetadadosVotoGraficoBarra> obterDadosGraficoBarraAno(Long idEvento) {
+		
+		List<DadosMetadadosVotoGraficoBarra> dadosMetadadosVotoGraficoBarraPorMes 
+		 = metadadosVotoRepository.findDadosMetadadosVotoGraficoBarraPorAno(idEvento);
+		return dadosMetadadosVotoGraficoBarraPorMes;
+	}
+	public List<DadosMetadadosVotoGraficoBarra> obterDadosGraficoBarraPorHora24(Long idEvento) {
+		
+		List<DadosMetadadosVotoGraficoBarra> dadosMetadadosVotoGraficoBarraPorMes 
+		= metadadosVotoRepository.findDadosMetadadosVotoGraficoBarraPorHora24(idEvento);
+		return dadosMetadadosVotoGraficoBarraPorMes;
+	}
+	public List<DadosMetadadosVotoGraficoBarra> obterDadosGraficoBarraPorHora24HoraDia(Long idEvento, String dataSelecionada) {
+		
+		
+		LocalDate date = LocalDate.parse(dataSelecionada, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+		
+		List<DadosMetadadosVotoGraficoBarra> dadosMetadadosVotoGraficoBarraPorMes 
+		= metadadosVotoRepository.findDadosMetadadosVotoGraficoBarraPorHora24HoraDia(idEvento, date);
+		return dadosMetadadosVotoGraficoBarraPorMes;
+	}
+		
 	public DadosDashboardEventoGrafico obterDadosGrafico(Long idEvento) {
 		
-		LocalDateTime now = LocalDateTime.now();
-		LocalDateTime dataInicio = now.plusDays(-7l);
-		dataInicio = dataInicio.with(LocalTime.MIN);
+		Evento referenceById = eventoRepository.getReferenceById(idEvento);
 		
-		LocalDateTime dataFim = now.with(LocalTime.MAX);;
+		LocalDateTime dataInicio = referenceById.getDataInicio().atStartOfDay();
+		LocalDateTime dataFim = referenceById.getDataFim().atStartOfDay().with(LocalTime.MAX);
 		
 		List<Voto> allByPesquisaEventoIdAndDataVoto = votoRepository.findAllByPesquisaEventoIdAndDataVotoBetween(
 				idEvento, dataInicio, dataFim);
@@ -131,6 +180,8 @@ public class DashboardEventoService {
 		mapQualificador.put("4", "Bom");
 		mapQualificador.put("5", "Otimo");
 		
+		List<String> qualificadorContabilizado = new ArrayList<String>();
+		
 		List<DadosDashboardEventoGraficoVotoPorData> lista =  new ArrayList<DadosDashboardEventoGraficoVotoPorData>();
 		for (String idQualificador : seriesQualificadoComQtdVotos.keySet()) {
 
@@ -142,12 +193,15 @@ public class DashboardEventoService {
 				Long qtd = map.get(itemData);
 				listaVotos.add(new DadosDashboardEventoGraficoQtdVotos(itemData , qtd));
 			}
-			
-				
+			qualificadorContabilizado.add(idQualificador);
 			lista.add(new DadosDashboardEventoGraficoVotoPorData(mapQualificador.get(idQualificador), listaVotos));
-			
 		}
 		
+		for (String itemQualificador : mapQualificador.keySet()) {
+			if (!qualificadorContabilizado.contains(itemQualificador)) {
+				lista.add(new DadosDashboardEventoGraficoVotoPorData(mapQualificador.get(itemQualificador), new ArrayList<DadosDashboardEventoGraficoQtdVotos>()));
+			}
+		}
 		
 		DadosDashboardEventoGrafico dadosDashboardEventoGrafico 
 			= new DadosDashboardEventoGrafico(categoriesListaDatas, lista);
@@ -159,10 +213,11 @@ public class DashboardEventoService {
 	public DadosDashboardEventoPainelQtdVotos qtdTotalVotos(Long idEvento) {
 		
 		Evento evento = eventoRepository.getReferenceById(idEvento);
-		List<Voto> allByPesquisaEventoIdAndDataVoto = votoRepository.findAllByPesquisaEventoId(idEvento);
+		long count = 
+				metadadosVotoRepository.countByEventoIdAndDataRegistroVotoIsNotNullOrderByDataRegistroVotoDesc(idEvento);
+		
 		DadosDashboardEventoPainelQtdVotos dadosDashboardEventoPainelQtdVotos 
-			= new DadosDashboardEventoPainelQtdVotos(evento, Long.valueOf(allByPesquisaEventoIdAndDataVoto.size()), 0);
-		// TEM QUE FAZER QUERY NATIVA
+			= new DadosDashboardEventoPainelQtdVotos(evento, count, 0);
 		
 		return dadosDashboardEventoPainelQtdVotos;
 	}
@@ -186,12 +241,6 @@ public class DashboardEventoService {
 	public DadosDashboardEventoPainelQtdVotos qtdVotosUltimos7Dias(Long idEvento) {
 		
 		LocalDateTime now = LocalDateTime.now();
-//		TemporalField dayOfWeek = WeekFields.ISO.dayOfWeek();		
-//		LocalDateTime dataInicio = now.with(dayOfWeek, dayOfWeek.range().getMinimum());
-//		dataInicio = dataInicio.with(LocalTime.MIN);
-//		
-//		LocalDateTime dataFim = now.with(dayOfWeek, dayOfWeek.range().getMaximum());
-//		dataFim = dataFim.with(LocalTime.MAX);
 
 		LocalDateTime dataInicio = now.plusDays(-7l);
 		dataInicio = dataInicio.with(LocalTime.MIN);
@@ -202,12 +251,14 @@ public class DashboardEventoService {
 	
 	private DadosDashboardEventoPainelQtdVotos obterQuantidadeVotos(Long idEvento, LocalDateTime dataInicio, LocalDateTime dataFim) {
 		
-		Evento evento = eventoRepository.getReferenceById(idEvento);
-		List<Voto> allByPesquisaEventoIdAndDataVoto = votoRepository.findAllByPesquisaEventoIdAndDataVotoBetween(idEvento, dataInicio, dataFim);
+        Evento evento = eventoRepository.getReferenceById(idEvento);
+		long count = 
+				metadadosVotoRepository.countByEventoIdAndDataRegistroVotoBetweenOrderByDataRegistroVotoDesc(idEvento, dataInicio, dataFim);
 		
 		DadosDashboardEventoPainelQtdVotos dadosDashboardEventoPainelQtdVotos 
-		    = new DadosDashboardEventoPainelQtdVotos(evento, Long.valueOf(allByPesquisaEventoIdAndDataVoto.size()), 0);
+			= new DadosDashboardEventoPainelQtdVotos(evento, count, 0);
 		// TEM QUE FAZER QUERY NATIVA
+		
 		return dadosDashboardEventoPainelQtdVotos;
 	}
 	
@@ -239,8 +290,11 @@ public class DashboardEventoService {
 			StringBuffer formatDurationEspecifico = new StringBuffer();
 			
 			formatDurationEspecifico.append(
-					DurationFormatUtils.formatDuration(duracao.toMillis(), "H 'horas' m 'minutos' s 'segundos' S 'millisegundos'"));
+					DurationFormatUtils.formatDuration(duracao.toMillis(), "d 'dias' H 'horas' m 'minutos' s 'segundos' S 'millisegundos'"));
 			
+			if (duracao.toHours()>24) {
+				formatDuration.append(DurationFormatUtils.formatDuration(duracao.toMillis(), " d 'dias'"));
+			} else
 			if (duracao.toHours()>0) {
 				formatDuration.append(DurationFormatUtils.formatDuration(duracao.toMillis(), " H 'horas'"));
 			} else
@@ -274,13 +328,58 @@ public class DashboardEventoService {
 			listaAtividade.add(
 					new DadosDashboardEventoPainelAtividadesOnlineVoto(null, null, 
 							"", pessoa.getNome(), 
-							pessoa.getCidade(), pessoa.getSexo(), formatDuration.toString(), formatDurationEspecifico.toString(), mediaVotos));
-			
-			
+							pessoa.getCidade(), pessoa.getSexo(), formatDuration.toString(), 
+							formatDurationEspecifico.toString(), mediaVotos, 
+							itemMetadadosVoto.getLatitude(), itemMetadadosVoto.getLongitude()));
 		}
 		
 		// TEM QUE FAZER QUERY NATIVA
 		return listaAtividade.subList(0, (listaAtividade.size()>10?10:listaAtividade.size()));
+	}
+
+	public List<DadosGraficoRadar> obterDadosGraficoRadar(Long idEvento) {
+
+		List<DadosGraficoRadar> dadosGraficoRadar = votoRepository.findDadosGraficoRadar(idEvento);
+		
+		return dadosGraficoRadar;
+	}
+
+	public List<DadosGraficoPiaEstado> obterDadosGraficoPie(Long idEvento) {
+		// TODO Auto-generated method stub
+		
+		List<DadosGraficoPiaEstado> dadosGraficoPiaEstados = votoRepository.findDadosGraficoPorEstado(idEvento);
+		return dadosGraficoPiaEstados;
+	}
+
+	public DadosDashboardEventoGeralGrafico obterDadosGraficoGeral() {
+		
+		List<Evento> all = eventoRepository.findAll();
+		List<DadosDashboardEventoGeralGraficoItem> list = new ArrayList<DadosDashboardEventoGeralGraficoItem>();
+
+		for (Evento evento : all) {
+		
+			LocalDateTime dataInicio = evento.getDataInicio().atTime(10, 30).with(LocalTime.MIN);
+			LocalDateTime dataFim = evento.getDataFim().atTime(10, 30).with(LocalTime.MAX);
+			List<MetadadosVoto> allByPesquisaEventoIdAndDataVoto = 
+					metadadosVotoRepository.findAllByEventoIdAndDataRegistroVotoBetweenOrderByDataRegistroVotoDesc(evento.getId(), 
+							dataInicio, dataFim);
+			
+			int totalVotosReal = 0;
+			int qtdVotos = 0;
+			qtdVotos = allByPesquisaEventoIdAndDataVoto.size();
+			for (MetadadosVoto metadado : allByPesquisaEventoIdAndDataVoto) {
+				for (Voto voto : metadado.getListaVotos()) {
+					totalVotosReal += voto.getVoto();			
+				}
+			}
+			
+			int totalVoto100 = qtdVotos*evento.getListaPesquisa().size()*5;
+			long media = (totalVotosReal*100)/totalVoto100;
+			float mediaEm5 = ((media*5f)/100f);
+			list.add(new DadosDashboardEventoGeralGraficoItem(evento, qtdVotos, mediaEm5));
+		} 
+		
+		return new DadosDashboardEventoGeralGrafico(list, list.size());
 	}
 
 }

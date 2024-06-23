@@ -25,6 +25,6 @@ public class SQLController {
 	public String campanha(ModelMap model, @RequestParam String sql){
 		 Query query = em.createNativeQuery(sql);
 		 List list = query.getResultList();
-		 return "<html>SQL: " + sql +" -> " + Arrays.deepToString(list.toArray()).replaceAll("\\], \\[", "]<br> <br>[ ") + "</html>";
+		 return "<html>SQL: " + sql +" <br> -> " + Arrays.deepToString(list.toArray()).replaceAll("\\], \\[", "]<br> -> <br>[ ") + "</html>";
 	}
 }

@@ -34,6 +34,8 @@ public class Evento {
 	private LocalDate dataHorasPublicacao;
 	private LocalDate dataHorasPublicacaoSuspensao;
 	private String hash;
+	private String urlPublicacao;
+	private String layoutPainelVotacao;
 	
 	@NotNull
     private LocalDate dataFim;
@@ -49,6 +51,7 @@ public class Evento {
 		this.imagemUrl = cadastroEvento.imagemUrl();
 		this.dataInicio = LocalDate.parse(cadastroEvento.dataInicio(), DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 		this.dataFim = LocalDate.parse(cadastroEvento.dataFim(), DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+		this.layoutPainelVotacao = cadastroEvento.layoutPainelVotacao();
 	}
     
     public Evento() {
@@ -134,5 +137,21 @@ public class Evento {
 
 	public void setDataHorasPublicacaoSuspensao(LocalDate dataHorasPublicacaoSuspensao) {
 		this.dataHorasPublicacaoSuspensao = dataHorasPublicacaoSuspensao;
+	}
+
+	public String getUrlPublicacao() {
+		return urlPublicacao;
+	}
+
+	public void setUrlPublicacao(String urlPublicacao) {
+		this.urlPublicacao = urlPublicacao;
+	}
+
+	public String getLayoutPainelVotacao() {
+		return layoutPainelVotacao;
+	}
+
+	public void setLayoutPainelVotacao(String layoutPainelVotacao) {
+		this.layoutPainelVotacao = layoutPainelVotacao;
 	}
 }
