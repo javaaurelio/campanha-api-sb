@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,17 +20,23 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import med.voll.api.domain.usuario.DadosCadastroAtualizarSenha;
 import med.voll.api.domain.usuario.DadosCadastroUsuario;
+import med.voll.api.domain.usuario.DadosImagemPerfil;
 import med.voll.api.domain.usuario.DadosListagemUsuario;
 import med.voll.api.domain.usuario.Usuario;
 import med.voll.api.domain.usuario.UsuarioRepository;
+import med.voll.api.service.usuario.UsuarioService;
 
 @RestController
-@RequestMapping("usuario")
+@RequestMapping("/usuario")
 public class UsuarioController {
 
 	@Autowired
 	UsuarioRepository usuarioRepository;
+	
+	@Autowired
+	private UsuarioService usuarioService;
 	
     @PostMapping
     @Transactional
@@ -38,34 +45,41 @@ public class UsuarioController {
     	usuarioRepository.save(new Usuario(dadosCadastroUsuario));
     }
     
-    @PutMapping("/imagem/perfil/{id}")
+    @PutMapping("/logado/imagem/perfil")
     @Transactional
-    public void registrarImagemPerfil(@PathVariable Long id, @RequestBody @Valid String base64Imagem, HttpServletRequest request) {
+    public DadosImagemPerfil registrarImagemPerfil(@RequestBody @Valid String base64Imagem, HttpServletRequest request) {
     	
-    	Usuario referenceById = usuarioRepository.getReferenceById(id);
+    	Usuario usuarioLogado = (Usuario)request.getAttribute("usuarioLogado");
+    	Usuario referenceById = usuarioRepository.getReferenceById(usuarioLogado.getId());
     	referenceById.setFotoPerfil(base64Imagem.getBytes());
     	usuarioRepository.save(referenceById);
+    	
+    	return new DadosImagemPerfil(new String(referenceById.getFotoPerfil()));
     }
     
-    @GetMapping("/imagem/perfil/{id}")
-    @Transactional
-    public String obterImagemPerfil(@PathVariable Long id, HttpServletRequest request) {
+    @GetMapping("/imagem/perfil")
+    public DadosImagemPerfil obterImagemPerfil(HttpServletRequest request) {
     	
-    	Usuario referenceById = usuarioRepository.getReferenceById(id);
-    	
+    	Usuario usuarioLogado = (Usuario)request.getAttribute("usuarioLogado");
+
+    	Usuario referenceById = usuarioRepository.getReferenceById(usuarioLogado.getId());
     	if (referenceById.getFotoPerfil() ==null) {
-    		return new String("");
+    		return new DadosImagemPerfil("");
     	};
-    	return new String(referenceById.getFotoPerfil());
+    	return new DadosImagemPerfil(new String(referenceById.getFotoPerfil()));
     }
     
     @PostMapping("/selfregistration")
     @Transactional
-    public void registrarSelfregistration(@RequestBody @Valid DadosCadastroUsuario dadosCadastroUsuario, HttpServletRequest request) {
+    public ResponseEntity<String> registrarSelfregistration(@RequestBody @Valid DadosCadastroUsuario dadosCadastroUsuario, HttpServletRequest request) {
+
     	Usuario entity = new Usuario(dadosCadastroUsuario);
+    	entity.setNome(dadosCadastroUsuario.nome());
+    	entity.setSenha(new BCryptPasswordEncoder().encode(entity.getSenha()));
     	entity.setDataHoraPreRegistro(LocalDateTime.now());
     	entity.setDataHoraRegistro(null);
 		usuarioRepository.save(entity);
+		return ResponseEntity.ok("{}");
     }
     
     @PostMapping("/selfregistration/confirmar")
@@ -75,13 +89,19 @@ public class UsuarioController {
     	usuarioRepository.save(new Usuario(dadosCadastroUsuario));
     }
     
-    @PutMapping("/{id}")
+    @PutMapping("/logado/perfil")
     @Transactional
-    public void atualizar(@PathVariable Long id, @RequestBody @Valid DadosCadastroUsuario dadosCadastroUsuario, HttpServletRequest request) {
+    public ResponseEntity<String> atualizar(@RequestBody @Valid DadosCadastroUsuario dadosCadastroUsuario, HttpServletRequest request) {
     	
-    	Usuario entity = new Usuario(dadosCadastroUsuario);
-    	entity.setId(id);
-    	usuarioRepository.save(entity);
+    	Usuario usuarioLogado = (Usuario)request.getAttribute("usuarioLogado");
+    	Usuario usuarioBanco = usuarioRepository.getReferenceById(usuarioLogado.getId());
+    	usuarioBanco.setNome(dadosCadastroUsuario.nome());
+    	usuarioBanco.setEmail(dadosCadastroUsuario.email());
+    	usuarioBanco.setEndereco(dadosCadastroUsuario.endereco());
+    	usuarioBanco.setCidade(dadosCadastroUsuario.cidade());
+    	usuarioBanco.setDataNascimento(dadosCadastroUsuario.dataNascimento());
+    	usuarioRepository.save(usuarioBanco);
+    	return ResponseEntity.noContent().build();
     }
 
     @GetMapping()
@@ -93,15 +113,33 @@ public class UsuarioController {
     
     @DeleteMapping("/{id}")
     @Transactional
-    public ResponseEntity<?> deletarUsuario(@PathVariable Long id, HttpServletRequest request) {
+    public ResponseEntity<String> deletarUsuario(@PathVariable Long id, HttpServletRequest request) {
     	usuarioRepository.deleteById(id);
-    	return ResponseEntity.ok().build();
+    	return ResponseEntity.ok("{}");
     }
-
+    
     @GetMapping("/{id}")
     public DadosCadastroUsuario obterDadosCadastroUsuario(@PathVariable Long id, HttpServletRequest request) {
+    	
     	Usuario referenceById = usuarioRepository.getReferenceById(id);
     	return new DadosCadastroUsuario(referenceById);
+    }
+    
+    @GetMapping("/logado/perfil")
+    public DadosCadastroUsuario obterDadosCadastroUsuarioPerfil(HttpServletRequest request) {
+    	
+    	Usuario usuarioLogado = (Usuario)request.getAttribute("usuarioLogado");
+    	Usuario referenceById = usuarioRepository.getReferenceById(usuarioLogado.getId());
+
+		return new DadosCadastroUsuario(referenceById);
+    }
+    
+    @PutMapping("/logado/perfil/senha")
+    @Transactional
+    public ResponseEntity<String> alterarSenha(@RequestBody @Valid DadosCadastroAtualizarSenha cadastroAtualizarSenha, HttpServletRequest request) {
+    	
+    	usuarioService.alterarSenha(cadastroAtualizarSenha);
+    	return ResponseEntity.ok("{}");
     }
     
     @GetMapping("/totalPreCadastroPendente")

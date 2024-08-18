@@ -6,9 +6,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -374,11 +372,17 @@ public class DashboardEventoService {
 			}
 			
 			int totalVoto100 = qtdVotos*evento.getListaPesquisa().size()*5;
-			long media = (totalVotosReal*100)/totalVoto100;
-			float mediaEm5 = ((media*5f)/100f);
-			list.add(new DadosDashboardEventoGeralGraficoItem(evento, qtdVotos, mediaEm5));
+			long media = 0;
+			float mediaEm5 = 0;
+			if (totalVoto100 > 0) {
+				media = (totalVotosReal*100)/totalVoto100;
+				mediaEm5 = ((media*5f)/100f);
+			} 
+			
+			list.add(new DadosDashboardEventoGeralGraficoItem(
+					evento, 
+					qtdVotos, mediaEm5, evento.getListaPesquisa().size(), evento.getUrlPublicacao(), evento.getImagemUrl()));
 		} 
-		
 		return new DadosDashboardEventoGeralGrafico(list, list.size());
 	}
 

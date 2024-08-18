@@ -3,6 +3,7 @@ package med.voll.api.controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,7 +21,7 @@ import med.voll.api.domain.voto.VotoRepository;
 import med.voll.api.service.voto.VotoService;
 
 @RestController
-@RequestMapping("voto")
+@RequestMapping("/voto")
 public class VotacaoController {
 
     @Autowired
@@ -31,11 +32,12 @@ public class VotacaoController {
 
     @PostMapping
     @Transactional
-    public void registrar(@RequestBody @Valid DadosCadastroDadosVoto dadosVotoParam, HttpServletRequest request) {
+    public ResponseEntity<String> registrar(@RequestBody @Valid DadosCadastroDadosVoto dadosVotoParam, HttpServletRequest request) {
     	
     	StringBuffer sbHeaderNames = new StringBuffer();    	
     	request.getHeaderNames().asIterator().forEachRemaining(entry -> { sbHeaderNames.append(entry+":"+request.getHeader(entry)+"| "); });
     	votoService.registrarVoto(dadosVotoParam, sbHeaderNames.toString());
+    	return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/evento/{idEvento}")
@@ -46,7 +48,6 @@ public class VotacaoController {
     
     @GetMapping("/painelvotacao/evento/{hash}")
     public List<DadosListagemPesquisa> obterDadosPainelVotacao(@PathVariable String hash, HttpServletRequest request) {
-    	
     	return votoService.obterDadosPainelVotacao(hash);
     }
 }

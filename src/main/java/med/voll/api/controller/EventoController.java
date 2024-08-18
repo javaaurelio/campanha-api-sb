@@ -4,10 +4,14 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,7 +21,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import med.voll.api.domain.evento.DadosCadastroEvento;
 import med.voll.api.domain.evento.DadosListagemEvento;
@@ -28,6 +34,8 @@ import med.voll.api.service.evento.EventoService;
 @RestController
 @RequestMapping("evento")
 public class EventoController {
+	
+	private static final Logger LOG = LoggerFactory.getLogger(EventoController.class);
 
 	@Autowired
 	private EventoRepository eventoRepository;
@@ -37,13 +45,15 @@ public class EventoController {
 
     @PostMapping
     @Transactional
-    public void cadastrar(@RequestBody @Valid DadosCadastroEvento evento) {
+    public ResponseEntity<String> cadastrar(@RequestBody @Valid DadosCadastroEvento evento) {
     	eventoRepository.save(new Evento(evento));
+    	
+    	return ResponseEntity.noContent().build();
     }
     
     @PutMapping("/{id}")
     @Transactional
-    public void atualizar(@RequestBody @Valid DadosCadastroEvento evento, @PathVariable Long id) {
+    public ResponseEntity<String> atualizar(@RequestBody @Valid DadosCadastroEvento evento, @PathVariable Long id) {
     	
     	Evento referenceById = eventoRepository.getReferenceById(id);
     	referenceById.setNome(evento.campanha());
@@ -58,13 +68,35 @@ public class EventoController {
     	referenceById.setDescricao(evento.descricao());
     	
     	eventoRepository.save(referenceById);
+    	return ResponseEntity.noContent().build(); 
+    }
+    
+    @GetMapping("/{id}")
+    @Transactional
+    public DadosCadastroEvento obterEvento(@PathVariable Long id) {
+    	
+    	Evento evento = eventoRepository.getReferenceById(id);
+    	return new DadosCadastroEvento(evento); 
+    }
+    
+    @GetMapping("/publicar/status/{id}")
+    @Transactional
+    public boolean statusEvento(@PathVariable Long id) {
+    	Evento referenceById = eventoRepository.getReferenceById(id);
+    	return referenceById.isPublicado();
     }
     
     @PutMapping("/publicar/{id}/{status}")
     @Transactional
-    public String publicarCampanha(@PathVariable Long id, @PathVariable String status, @RequestBody String url) {
+    public DadosCadastroEvento publicarCampanha(@PathVariable Long id, @PathVariable String status, HttpServletRequest request) {
     	
     	Evento referenceById = eventoRepository.getReferenceById(id);
+    	
+    	if (referenceById.getListaPesquisa().isEmpty()) {
+    		LOG.info("Nao possui Perguntas !!", new Object[]{id});
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Evento não publicado, pois não há perguntas cadastradas !");
+    	} 
+    	
     	
     	boolean publicar = status.contains("1") || status.toLowerCase().contains("true") || status.toLowerCase().contains("sim");
    		referenceById.setPublicado(publicar);
@@ -73,24 +105,29 @@ public class EventoController {
    			referenceById.setHash(UUID.randomUUID().toString());
    		}
    		
+   		String url = request.getHeader("origin");
    		if (publicar) {
-   			referenceById.setUrlPublicacao(url+referenceById.getHash());
+   			
+//            http://localhost:8080/painelvotacao?hash=46c7bab3-66ef-4f00-9b67-0b3418e879a2&l=padrao
+   			referenceById.setUrlPublicacao(url+"/painelvotacao?hash=" + referenceById.getHash());
    			referenceById.setDataHorasPublicacao(LocalDate.now());
    			referenceById.setDataHorasPublicacaoSuspensao(null);
    		} else {
+   			referenceById.setUrlPublicacao(url+"/painelvotacao?hash=" + referenceById.getHash());
    			referenceById.setDataHorasPublicacaoSuspensao(LocalDate.now());
    		}
    		
-   		eventoRepository.save(referenceById);
+   		Evento save = eventoRepository.save(referenceById);
     	
-    	return referenceById.getHash();
+    	return new DadosCadastroEvento(save);
     }
     
     @DeleteMapping("/{id}")
     @Transactional
-    public void delete(@PathVariable Long id) {
+    public ResponseEntity<String> delete(@PathVariable Long id) {
     	
     	eventoRepository.deleteById(id);
+    	return ResponseEntity.noContent().build(); 
     }
 
     @GetMapping

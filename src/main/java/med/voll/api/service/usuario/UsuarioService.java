@@ -6,14 +6,19 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
+import jakarta.validation.Valid;
 import med.voll.api.domain.dashboardevento.DadosDashboardEventoGrafico;
 import med.voll.api.domain.dashboardevento.DadosDashboardEventoGraficoQtdVotos;
 import med.voll.api.domain.dashboardevento.DadosDashboardEventoGraficoVotoPorData;
@@ -22,6 +27,9 @@ import med.voll.api.domain.dashboardevento.DadosDashboardEventoPainelQtdVotos;
 import med.voll.api.domain.evento.Evento;
 import med.voll.api.domain.evento.EventoRepository;
 import med.voll.api.domain.pesquisado.Pesquisado;
+import med.voll.api.domain.usuario.DadosCadastroAtualizarSenha;
+import med.voll.api.domain.usuario.Usuario;
+import med.voll.api.domain.usuario.UsuarioRepository;
 import med.voll.api.domain.voto.DadosGraficoPiaEstado;
 import med.voll.api.domain.voto.DadosGraficoRadar;
 import med.voll.api.domain.voto.Voto;
@@ -34,6 +42,9 @@ public class UsuarioService {
 
 	@Autowired
 	private VotoRepository votoRepository;
+	
+	@Autowired
+	private UsuarioRepository usuarioRepository;
 	
 	@Autowired
 	private MetadadosVotoRepository metadadosVotoRepository;
@@ -302,10 +313,26 @@ public class UsuarioService {
 	}
 
 	public List<DadosGraficoPiaEstado> obterDadosGraficoPie(Long idEvento) {
-		// TODO Auto-generated method stub
 		
 		List<DadosGraficoPiaEstado> dadosGraficoPiaEstados = votoRepository.findDadosGraficoPorEstado(idEvento);
 		return dadosGraficoPiaEstados;
+	}
+
+	public void alterarSenha(@Valid DadosCadastroAtualizarSenha dadosCadastroAtualizarSenha) {
+		
+		Usuario principal = (Usuario)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+		
+		Optional<Usuario> byId = usuarioRepository.findById(principal.getId());
+		Usuario usuarioBanco = byId.get();
+		
+		String senhaAtualBancoEncode = usuarioBanco.getSenha();
+		String novaSenhaBCrypt = new BCryptPasswordEncoder().encode(dadosCadastroAtualizarSenha.novaSenha());
+		
+		if (!new BCryptPasswordEncoder().matches(dadosCadastroAtualizarSenha.senhaAtual(), senhaAtualBancoEncode)) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Senha atual é invalida!");
+		}
+		usuarioBanco.setSenha(novaSenhaBCrypt);		
+		usuarioRepository.saveAndFlush(usuarioBanco);
 	}
 
 }

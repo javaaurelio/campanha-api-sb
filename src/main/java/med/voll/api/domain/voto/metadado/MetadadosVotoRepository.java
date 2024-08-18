@@ -10,12 +10,26 @@ import org.springframework.data.repository.query.Param;
 
 public interface MetadadosVotoRepository extends JpaRepository<MetadadosVoto, Long> {
 	
-	@Query(value = "SELECT to_char(mtv.DATA_REGISTRO_VOTO,'dd-MM-yyyy') as dataVoto, count(mtv.ID) as qtdVotos FROM PUBLIC.METADADOSVOTO mtv "
-			+ "INNER JOIN PUBLIC.EVENTO evento ON evento.ID = mtv.EVENTO_ID  "
-			+ "WHERE mtv.DATA_REGISTRO_VOTO IS NOT NULL and evento.ID = :idEvento "
-			+ "GROUP BY to_char(mtv.DATA_REGISTRO_VOTO,'dd-MM-yyyy') "
-			+ " order by to_char(mtv.DATA_REGISTRO_VOTO,'dd-MM-yyyy') asc",
-		    nativeQuery = true)
+	@Query(value =" WITH DADOS AS ( "  
+				+ " SELECT "
+				+ "   ROW_NUMBER() OVER (order by mtv.DATA_REGISTRO_VOTO) AS LINHA, to_char(mtv.DATA_REGISTRO_VOTO,'dd-MM-yyyy') "
+				+ " as dataVoto, mtv.DATA_REGISTRO_VOTO, "
+			    + "    count(mtv.ID) as qtdVotos " 
+			    + "FROM "
+			    + "    PUBLIC.METADADOSVOTO mtv " 
+			    + "INNER JOIN "
+			    + "    PUBLIC.EVENTO evento "
+			    + "        ON evento.ID = mtv.EVENTO_ID "  
+			    + " WHERE "
+			    + "    mtv.DATA_REGISTRO_VOTO IS NOT NULL " 
+			    + "    and evento.ID = :idEvento "
+			    + " GROUP BY "
+			    + "    to_char(mtv.DATA_REGISTRO_VOTO,'dd-MM-yyyy'), mtv.DATA_REGISTRO_VOTO "
+			    + "    ORDER BY mtv.DATA_REGISTRO_VOTO ASC ) "
+			    + "    "
+			    + " SELECT DATAVOTO as dataVoto, count(QTDVOTOS) as qtdVotos, MAX(LINHA) FROM DADOS "
+			    + " GROUP BY DATAVOTO "
+			    + " ORDER BY MAX(LINHA) ", nativeQuery = true)
 	List<DadosMetadadosVotoGraficoBarra> findDadosMetadadosVotoGraficoBarraPorDia(@Param("idEvento") Long idEvento);
 	
 	@Query(value = "SELECT to_char(mtv.DATA_REGISTRO_VOTO,'MM-yyyy') as dataVoto, count(mtv.ID) as qtdVotos FROM PUBLIC.METADADOSVOTO mtv "

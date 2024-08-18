@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -39,29 +40,33 @@ public class PesquisaController {
 
 	@PostMapping
 	@Transactional
-	public void cadastrar(@RequestBody @Valid DadosCadastroPesquisa pesquisa) {
+	public ResponseEntity<String> cadastrar(@RequestBody @Valid DadosCadastroPesquisa pesquisa) {
 		
 		Evento byId = eventoRepository.getReferenceById(pesquisa.idEvento());
 		
 		Pesquisa entity = new Pesquisa(pesquisa);
 		entity.setEvento(byId);
 		pesquisaRepository.save(entity);
+		
+		return ResponseEntity.noContent().build();
 	}
 	
 	@PutMapping
 	@Transactional
-	public void atualizar(@RequestBody @Valid DadosCadastroPesquisa pesquisa) {
+	public ResponseEntity<String> atualizar(@RequestBody @Valid DadosCadastroPesquisa pesquisa) {
 		
 		Evento byId = eventoRepository.getReferenceById(pesquisa.idEvento());
 		
 		Pesquisa entity = new Pesquisa(pesquisa);
 		entity.setEvento(byId);
 		pesquisaRepository.save(entity);
+		
+		return ResponseEntity.noContent().build();
 	}
 	
 	@PutMapping("/ordem/{id}/up")
 	@Transactional
-	public void atualizarOrdemUP(@PathVariable Long id) {
+	public ResponseEntity<String> atualizarOrdemUP(@PathVariable Long id) {
 		
 		Pesquisa entity = pesquisaRepository.getReferenceById(id);
 		int ordemAtual = entity.getOrdem();
@@ -88,12 +93,12 @@ public class PesquisaController {
 					throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Alteracao de ordem nao realizada! Pesquisa ja esta na primeira possicao!");
 				}
 			}
-			
+		return ResponseEntity.noContent().build();
 	}
 	
 	@PutMapping("/ordem/{id}/down")
 	@Transactional
-	public void atualizarOrdemDown(@PathVariable Long id) {
+	public ResponseEntity<String> atualizarOrdemDown(@PathVariable Long id) {
 		
 		Pesquisa entity = pesquisaRepository.getReferenceById(id);
 		int ordemAtual = entity.getOrdem();
@@ -107,6 +112,8 @@ public class PesquisaController {
 			LOG.info("Alteracao de ordem nao realizada! Pesquisa {} ja esta na ultima possicao!", new Object[]{id});
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Alteracao de ordem nao realizada! Pesquisa ja esta na primeira possicao!");
 		}
+		
+		return ResponseEntity.noContent().build();
 	}
 
 	@GetMapping("/{idEvento}")
@@ -119,7 +126,7 @@ public class PesquisaController {
 
 	@DeleteMapping("/{id}")
 	@Transactional
-	public void delete(@PathVariable Long id) {
+	public ResponseEntity<String> delete(@PathVariable Long id) {
 		
 		Pesquisa entity = pesquisaRepository.getReferenceById(id);
 		pesquisaRepository.deleteById(id);
@@ -131,7 +138,7 @@ public class PesquisaController {
 			pesquisa.setOrdem(novaOrdem);
 		}	
 		pesquisaRepository.saveAll(allByEventoIdOrderByOrdemAsc);
-
+		return ResponseEntity.noContent().build();
 	}
 //
 //    @PutMapping

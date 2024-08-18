@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -252,6 +253,12 @@ public class VotoService {
 	}
 
 	public List<DadosListagemPesquisa> obterDadosPainelVotacao(String hash) {
+		
+		try {
+			UUID.fromString(hash);
+		} catch (Exception e) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Parametro invalido!");
+		}
 		
 		Evento eventoByHash = eventoRepository.findByHash(hash);
 		

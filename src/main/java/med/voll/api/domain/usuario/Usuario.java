@@ -2,6 +2,12 @@ package med.voll.api.domain.usuario;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.List;
+
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -12,10 +18,13 @@ import jakarta.persistence.Table;
 
 @Table(name = "usuario")
 @Entity(name = "usuario")
-public class Usuario {
+public class Usuario implements UserDetails {
     
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    private String login;
+    private String senha;
+        
     private String nome;
     private String email;
     private String usuario;
@@ -24,7 +33,6 @@ public class Usuario {
     private String cidade;
     private String uf;
     private String cep;
-    private String senha;
     private LocalDate dataNascimento;
     private boolean ativo;
     private LocalDateTime dataHoraPreRegistro;
@@ -47,7 +55,9 @@ public class Usuario {
    		this.uf=cadastroUsuario.uf();
    		this.dataNascimento= cadastroUsuario.dataNascimento();
    		this.ativo= cadastroUsuario.ativo();
-   		this.usuario= cadastroUsuario.usuario();
+   		this.usuario = cadastroUsuario.usuario();
+   		this.login = cadastroUsuario.login();
+   		this.senha = cadastroUsuario.senha();
     }
 
 	public Long getId() {
@@ -163,6 +173,14 @@ public class Usuario {
 		this.dataHoraAtualizacao = dataHoraAtualizacao;
 	}
 
+	public String getFotoPerfilStringHtml() {
+		
+		if (fotoPerfil != null) {
+			return new String(fotoPerfil);
+		}
+		return "";
+	}
+	
 	public byte[] getFotoPerfil() {
 		return fotoPerfil;
 	}
@@ -185,6 +203,49 @@ public class Usuario {
 
 	public void setDataHoraPreRegistro(LocalDateTime dataHoraPreRegistro) {
 		this.dataHoraPreRegistro = dataHoraPreRegistro;
+	}
+
+	public String getLogin() {
+		return login;
+	}
+
+	public void setLogin(String login) {
+		this.login = login;
+	}
+
+	@Override
+	public Collection<? extends GrantedAuthority> getAuthorities() {
+		return List.of(new SimpleGrantedAuthority("ROLE_USER"));
+	}
+
+	@Override
+	public String getPassword() {
+		return senha;
+	}
+
+	@Override
+	public String getUsername() {
+		return login;
+	}
+
+	@Override
+	public boolean isAccountNonExpired() {
+		return true;
+	}
+
+	@Override
+	public boolean isAccountNonLocked() {
+		return true;
+	}
+
+	@Override
+	public boolean isCredentialsNonExpired() {
+		return true;
+	}
+
+	@Override
+	public boolean isEnabled() {
+		return true;
 	}
        
 

@@ -64,6 +64,7 @@ public class DashboardEventoController {
     	
     	return dashboardEventoService.obterDadosGrafico(idEvento);
     }
+    
     @GetMapping("/{idEvento}/grafico/barra/dia")
     public List<DadosMetadadosVotoGraficoBarra> obterDadosGraficoBarraDia(@PathVariable Long idEvento) {
     	
@@ -93,7 +94,8 @@ public class DashboardEventoController {
     @GetMapping("/geral")
     public DadosDashboardEventoGeralGrafico obterDadosGraficoGeral() {
     	
-    	return dashboardEventoService.obterDadosGraficoGeral();
+    	DadosDashboardEventoGeralGrafico obterDadosGraficoGeral = dashboardEventoService.obterDadosGraficoGeral();
+		return obterDadosGraficoGeral;
     }
     
     @GetMapping("/{idEvento}/grafico/radar")
