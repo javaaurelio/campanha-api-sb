@@ -38,6 +38,9 @@ public class Usuario implements UserDetails {
     private LocalDateTime dataHoraPreRegistro;
     private LocalDateTime dataHoraRegistro;
     private LocalDateTime dataHoraAtualizacao;
+    private LocalDateTime dataHoraPrimeiroAcesso;
+    private LocalDateTime dataHoraUltimoAcesso;
+    
     @Lob
     private byte[] fotoPerfil;
     
@@ -101,6 +104,9 @@ public class Usuario implements UserDetails {
 
 
 	public String getCidade() {
+		if (cidade == null) {
+			cidade="";
+		}
 		return cidade;
 	}
 
@@ -247,6 +253,21 @@ public class Usuario implements UserDetails {
 	public boolean isEnabled() {
 		return true;
 	}
-       
+
+	public LocalDateTime getDataHoraPrimeiroAcesso() {
+		return dataHoraPrimeiroAcesso;
+	}
+
+	public LocalDateTime getDataHoraUltimoAcesso() {
+		return dataHoraUltimoAcesso;
+	}
+
+	public void setDataHoraPrimeiroAcesso(LocalDateTime dataHoraPrimeiroAcesso) {
+		this.dataHoraPrimeiroAcesso = dataHoraPrimeiroAcesso;
+	}
+
+	public void setDataHoraUltimoAcesso(LocalDateTime dataHoraUltimoAcesso) {
+		this.dataHoraUltimoAcesso = dataHoraUltimoAcesso;
+	}
 
 }

@@ -249,7 +249,11 @@ public class VotoService {
 			e.setPesquisado(pesquisado);
 			listaVotos.add(e);
 		}
-		votoRepository.saveAll(listaVotos);
+		try {
+			votoRepository.saveAll(listaVotos);
+		} catch (Exception e) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Voto nao registrado!");
+		}
 	}
 
 	public List<DadosListagemPesquisa> obterDadosPainelVotacao(String hash) {

@@ -108,6 +108,8 @@ public class UsuarioController {
     public ResponseEntity<Page<DadosListagemUsuario>> listarUsuario(@PageableDefault(size = 3, sort = {"nome"}) Pageable paginacao, 
     		HttpServletRequest request) {
     	var page = usuarioRepository.findAll(paginacao).map(DadosListagemUsuario::new);
+    	
+    	
         return ResponseEntity.ok(page);
     }
     

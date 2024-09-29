@@ -1,5 +1,7 @@
 package med.voll.api.controller;
 
+import java.time.LocalDateTime;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -14,6 +16,7 @@ import jakarta.validation.Valid;
 import med.voll.api.domain.usuario.DadosAutenticacao;
 import med.voll.api.domain.usuario.DadosAutenticacaoToken;
 import med.voll.api.domain.usuario.Usuario;
+import med.voll.api.domain.usuario.UsuarioRepository;
 import med.voll.api.infra.security.TokenService;
 
 @RestController
@@ -22,6 +25,9 @@ public class AutenticacaoController {
 	
 	@Autowired
 	private AuthenticationManager manager;
+	
+	@Autowired
+	private UsuarioRepository usuarioRepository;
 	
 	@Autowired
 	private TokenService tokenService;
@@ -36,24 +42,16 @@ public class AutenticacaoController {
     	request.getHeaderNames().asIterator().forEachRemaining(entry -> { sbHeaderNames.append(entry+":"+request.getHeader(entry)+"\n "); });
     	System.out.println(sbHeaderNames);
 		
-//    	window.screen.colorDepth
-//    	window.screen.availWidth
-//    	screen.height
-//    	screen.width
-//    	et text = "<p>Browser CodeName: " + navigator.appCodeName + "</p>" +
-//    			"<p>Browser Name: " + navigator.appName + "</p>" +
-//    			"<p>Browser Version: " + navigator.appVersion + "</p>" +
-//    			"<p>Cookies Enabled: " + navigator.cookieEnabled + "</p>" +
-//    			"<p>Browser Language: " + navigator.language + "</p>" +
-//    			"<p>Browser Online: " + navigator.onLine + "</p>" +
-//    			"<p>Platform: " + navigator.platform + "</p>" +
-//    			"<p>Platform: " + JSON.stringify(navigator.hardwareConcurrency) + "</p>" +
-//    			"<p>Platform: " + JSON.stringify(navigator.webdriver) + "  "+ window.clientInformation + "</p>"
-//    			"<p>User-agent header: " + navigator.userAgent + "</p>";
-//
-//    			document.getElementById("demo").innerHTML = text;
-//    			</script>
-    	String gerarToken = tokenService.gerarToken("123", (Usuario)authenticate.getPrincipal());
+    	Usuario principal = (Usuario)authenticate.getPrincipal();
+		String gerarToken = tokenService.gerarToken("123", principal);
+    	
+    	Usuario referenceById = usuarioRepository.getReferenceById(principal.getId());
+    	if (referenceById.getDataHoraPrimeiroAcesso() == null) {
+    		referenceById.setDataHoraPrimeiroAcesso(LocalDateTime.now());
+    	}
+    	referenceById.setDataHoraUltimoAcesso(LocalDateTime.now());
+    	usuarioRepository.save(referenceById);
+    	
 		return new DadosAutenticacaoToken(gerarToken);
 		
 	}

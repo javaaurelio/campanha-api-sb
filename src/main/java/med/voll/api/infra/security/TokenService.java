@@ -17,8 +17,7 @@ public class TokenService {
 	public String gerarToken(String numeroMagico, Usuario usuario) {
 
 		Algorithm algorithm = Algorithm.HMAC512(numeroMagico);
-		return JWT.create().withIssuer("APP-Campanha").withSubject(usuario.getLogin()).withExpiresAt(dataExpiracao())
-				.sign(algorithm);
+		return JWT.create().withIssuer("APP-Campanha").withSubject(usuario.getLogin()).withExpiresAt(dataExpiracao()).sign(algorithm);
 	}
 
 	public String validarToken(String numeroMagico, String token) {

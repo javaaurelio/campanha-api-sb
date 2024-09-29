@@ -31,13 +31,13 @@ public class SegurancaConfig {
 				.and().authorizeHttpRequests()
 				.antMatchers("/login").permitAll()
 				.antMatchers("/usuario/selfregistration").permitAll()
-				.antMatchers("/voto/painelvotacao").permitAll()
-				.antMatchers("/voto").permitAll()
+				.antMatchers("/voto/**").permitAll()
 				.antMatchers(HttpMethod.OPTIONS, "**").permitAll()
-				.antMatchers(HttpMethod.GET, "**").permitAll()
+//				.antMatchers(HttpMethod.GET, "**").permitAll()
 				.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
 				.anyRequest().authenticated()
-				.and().addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class).build();
+				.and().addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
+		        .build();
 	}
 
 	@Bean

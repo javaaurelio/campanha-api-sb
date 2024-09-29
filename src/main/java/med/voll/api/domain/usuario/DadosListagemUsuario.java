@@ -1,6 +1,5 @@
 package med.voll.api.domain.usuario;
 
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 public record DadosListagemUsuario(Long id, String nome, String email, String endereco, String cidade, String uf,
@@ -20,8 +19,9 @@ public record DadosListagemUsuario(Long id, String nome, String email, String en
 	        		usuario.isAtivo(), 
 	        		(usuario.getDataHoraRegistro()!= null ? DateTimeFormatter.ofPattern("dd/MM/yyyy").format(usuario.getDataHoraRegistro()): ""), 
 	        		(usuario.getDataHoraPreRegistro()!= null ? DateTimeFormatter.ofPattern("dd/MM/yyyy").format(usuario.getDataHoraPreRegistro()): ""),
-	        		DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss").format(LocalDateTime.now().plusDays(10)),
-	        		LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")),
+	        		
+	        		(usuario.getDataHoraPrimeiroAcesso()!= null ? DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss").format(usuario.getDataHoraPrimeiroAcesso()): ""), 
+	        		(usuario.getDataHoraUltimoAcesso()!= null ? DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss").format(usuario.getDataHoraUltimoAcesso()): ""),
 	        		usuario.getSenha());
 	    }
 
