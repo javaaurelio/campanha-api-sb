@@ -1,6 +1,7 @@
 package med.voll.api.controller;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -26,6 +27,8 @@ import med.voll.api.domain.usuario.DadosImagemPerfil;
 import med.voll.api.domain.usuario.DadosListagemUsuario;
 import med.voll.api.domain.usuario.Usuario;
 import med.voll.api.domain.usuario.UsuarioRepository;
+import med.voll.api.infra.ParametrosUtil;
+import med.voll.api.infra.email.EmailServiceImpl;
 import med.voll.api.service.usuario.UsuarioService;
 
 @RestController
@@ -37,6 +40,9 @@ public class UsuarioController {
 	
 	@Autowired
 	private UsuarioService usuarioService;
+
+	@Autowired
+	private EmailServiceImpl emailServiceImpl;
 	
     @PostMapping
     @Transactional
@@ -78,8 +84,22 @@ public class UsuarioController {
     	entity.setSenha(new BCryptPasswordEncoder().encode(entity.getSenha()));
     	entity.setDataHoraPreRegistro(LocalDateTime.now());
     	entity.setDataHoraRegistro(null);
-		usuarioRepository.save(entity);
+    	entity.setAtivo(true);
+    	entity.setHash(UUID.randomUUID().toString());
+//    	emailServiceImpl.sendSimpleMessage(ParametrosUtil.get("email-adm"), "URL?/selfregistration/confirmar/email/"+entity.getHash());
+		
+		usuarioRepository.save(entity);		
 		return ResponseEntity.ok("{}");
+    }
+    
+    @PostMapping("/selfregistration/confirmar/email/{hash}")
+    @Transactional
+    public void registrarSelfregistrationConfirmarEmail(@PathVariable String hash, HttpServletRequest request) {
+    	
+    	Usuario usuarioByHash = usuarioRepository.findUsuarioByHash(hash);
+    	usuarioByHash.setAtivo(true);
+    	usuarioByHash.setDataHoraRegistro(LocalDateTime.now());
+    	usuarioRepository.save(usuarioByHash);
     }
     
     @PostMapping("/selfregistration/confirmar")

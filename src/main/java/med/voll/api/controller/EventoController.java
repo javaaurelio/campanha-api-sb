@@ -108,7 +108,6 @@ public class EventoController {
    		String url = request.getHeader("origin");
    		if (publicar) {
    			
-//            http://localhost:8080/painelvotacao?hash=46c7bab3-66ef-4f00-9b67-0b3418e879a2&l=padrao
    			referenceById.setUrlPublicacao(url+"/painelvotacao?hash=" + referenceById.getHash());
    			referenceById.setDataHorasPublicacao(LocalDate.now());
    			referenceById.setDataHorasPublicacaoSuspensao(null);

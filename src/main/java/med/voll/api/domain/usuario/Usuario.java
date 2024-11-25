@@ -29,6 +29,8 @@ public class Usuario implements UserDetails {
     private String email;
     private String usuario;
     
+    private String hash;
+    
     private String endereco;
     private String cidade;
     private String uf;
@@ -268,6 +270,14 @@ public class Usuario implements UserDetails {
 
 	public void setDataHoraUltimoAcesso(LocalDateTime dataHoraUltimoAcesso) {
 		this.dataHoraUltimoAcesso = dataHoraUltimoAcesso;
+	}
+
+	public String getHash() {
+		return hash;
+	}
+
+	public void setHash(String hash) {
+		this.hash = hash;
 	}
 
 }
